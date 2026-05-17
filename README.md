@@ -68,7 +68,7 @@ fastboot flash vendor_boot_b stock_vendor_boot.img
 
 | Item | Detail |
 |------|--------|
-| Manifest | `minimal-manifest-twrp/platform_manifest_twrp_omni` branch `twrp-12.1` |
+| Manifest | `minimal-manifest-twrp/platform_manifest_twrp_aosp` branch `twrp-12.1` |
 | Output | `vendor_boot.img` (not `recovery.img`) |
 | Recovery location | Inside `vendor_boot` partition (Android 13+ VAB) |
 | Touchscreen | Working |
@@ -99,7 +99,6 @@ super                        — Dynamic partitions (system, product, vendor)
 ## Credits
 - [cooked71](https://github.com/cooked71) — Original TWRP device tree
 - [Team Win](https://twrp.me) — TWRP Recovery Project
-- [TomKing062](https://github.com/TomKing062) — Bootloader unlock exploit
 
 ## License
 Apache 2.0
