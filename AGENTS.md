@@ -11,7 +11,7 @@
 
 ## Build Method
 - GitHub Actions workflow (`.github/workflows/build-twrp.yml`)
-- Manifest: `minimal-manifest-twrp/platform_manifest_twrp_omni` branch `twrp-12.1`
+- Manifest: `minimal-manifest-twrp/platform_manifest_twrp_aosp` branch `twrp-12.1`
 - Device tree path: `device/realme/RE58C2/`
 - Output: `vendor_boot.img` (NOT `recovery.img`)
 
