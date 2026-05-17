@@ -15,17 +15,16 @@ Device tree for building TWRP recovery for Realme C53.
 ## Build with GitHub Actions
 
 ### 1. Fork this repo
-Click **Fork** button on GitHub (or use the template).
+Click **Fork** on GitHub.
 
 ### 2. Trigger build
-```bash
-# Go to your fork on GitHub
-# Actions tab → "Build TWRP for Realme C53 (RMX3760)" → "Run workflow"
+```
+Actions → "Build TWRP for Realme C53 (RMX3760)" → "Run workflow"
 ```
 
 ### 3. Download artifact
-After build completes (~30-60 min):
-- **Actions** tab → click completed run → scroll to **Artifacts**
+After build completes (~30 min):
+- **Actions** → completed run → **Artifacts**
 - Download `twrp-rmx3760` → extract → `vendor_boot.img`
 
 ---
@@ -68,16 +67,17 @@ fastboot flash vendor_boot_b stock_vendor_boot.img
 
 | Item | Detail |
 |------|--------|
-| Manifest | `minimal-manifest-twrp/platform_manifest_twrp_aosp` branch `twrp-12.1` |
-| Output | `vendor_boot.img` (not `recovery.img`) |
-| Recovery location | Inside `vendor_boot` partition (Android 13+ VAB) |
+| Manifest | `platform_manifest_twrp_aosp` branch `twrp-12.1` |
+| Make target | `vendorbootimage` (not `recoveryimage`) |
+| Output | `vendor_boot.img` (100 MB partition) |
+| Recovery location | Inside `vendor_boot` (Android VAB) |
 | Touchscreen | Working |
-| Data decryption | Not working (no FBE/FSCRYPT support yet) |
-| MTP | Not tested |
-| ADB sideload | Not tested |
+| Data decryption | Not working |
+| MTP | Needs testing |
+| ADB sideload | Needs testing |
 
 ### Known issues
-- "Atomic commit failed ret=-22" in log — patched via custom `graphics_drm.cpp`
+- "Atomic commit failed ret=-22" — fixed via custom `graphics_drm.cpp`
 - No userdata decryption
 
 ---
