@@ -58,7 +58,7 @@ jobs:
           export CCACHE_EXEC=/usr/bin/ccache
           source build/envsetup.sh
           lunch twrp_RE58C2-eng
-          make -j$(nproc --all) recoveryimage 2>&1
+          make -j$(nproc --all) vendorbootimage 2>&1
 
       - name: Upload vendor_boot.img
         uses: actions/upload-artifact@v4
