@@ -101,4 +101,4 @@ super                        — Dynamic partitions (system, product, vendor)
 - [Team Win](https://twrp.me) — TWRP Recovery Project
 
 ## License
-Apache 2.0
+GPL v3
