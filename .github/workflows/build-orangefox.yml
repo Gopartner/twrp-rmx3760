@@ -64,15 +64,20 @@ jobs:
              ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}/bootable/recovery/minuitwrp/graphics_drm.cpp
 
       - name: Build OrangeFox
+        shell: bash
         run: |
+          set -x
           export CCACHE_DIR=/tmp/ccache
           export USE_CCACHE=1
           export CCACHE_EXEC=/usr/bin/ccache
           export ALLOW_MISSING_DEPENDENCIES=true
-          cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}
-          source build/envsetup.sh
-          lunch twrp_${{ env.DEVICE_NAME }}-eng
-          make -j$(nproc --all) vendorbootimage 2>&1
+          BUILD_DIR="${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}"
+          echo "Build dir: $BUILD_DIR"
+          ls -la "$BUILD_DIR/build/envsetup.sh" 2>/dev/null || echo "envsetup.sh NOT FOUND!"
+          cd "$BUILD_DIR" || { echo "cd FAILED"; exit 1; }
+          source build/envsetup.sh || { echo "source envsetup.sh FAILED"; exit 1; }
+          lunch twrp_${{ env.DEVICE_NAME }}-eng || { echo "lunch FAILED"; exit 1; }
+          make -j$(nproc --all) vendorbootimage 2>&1 || { echo "make FAILED"; exit 1; }
 
       - name: Upload vendor_boot.img
         uses: actions/upload-artifact@v4
