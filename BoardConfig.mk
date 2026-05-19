@@ -198,3 +198,6 @@ TWRP_INCLUDE_LOGCAT := true
 #prop
 TW_INCLUDE_LIBRESETPROP := true
 TW_INCLUDE_RESETPROP := true
+
+# OrangeFox Configuration
+-include device/realme/RE58C2/OrangeFoxBoardConfig.mk
