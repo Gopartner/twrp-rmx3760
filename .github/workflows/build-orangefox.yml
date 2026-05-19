@@ -52,9 +52,15 @@ jobs:
           cd sync
           ./orangefox_sync.sh --branch ${{ env.FOX_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}
 
+      - name: Move device tree to build directory
+        run: |
+          mkdir -p ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}/${{ env.DEVICE_PATH }}
+          cp -r ${GITHUB_WORKSPACE}/${{ env.DEVICE_PATH }}/* \
+                ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}/${{ env.DEVICE_PATH }}/
+
       - name: Apply graphics_drm patch
         run: |
-          cp ${GITHUB_WORKSPACE}/${{ env.DEVICE_PATH }}/issue_atomic/graphics_drm.cpp \
+          cp ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}/${{ env.DEVICE_PATH }}/issue_atomic/graphics_drm.cpp \
              ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}/bootable/recovery/minuitwrp/graphics_drm.cpp
 
       - name: Build OrangeFox
@@ -72,5 +78,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: orangefox-${{ env.DEVICE_NAME }}
-          path: ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}/out/target/product/${{ env.DEVICE_NAME }}/vendor_boot.img
+          path: OrangeFox/fox_${{ env.FOX_BRANCH }}/out/target/product/${{ env.DEVICE_NAME }}/vendor_boot.img
           if-no-files-found: error
