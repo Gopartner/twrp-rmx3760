@@ -9,6 +9,12 @@ concurrency:
   group: orangefox-build-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  FOX_BRANCH: 12.1
+  DEVICE_NAME: RE58C2
+  DEVICE_PATH: device/realme/RE58C2
+  BUILD_TARGET: vendorboot
+
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -17,52 +23,54 @@ jobs:
       - name: Checkout device tree
         uses: actions/checkout@v4
         with:
-          path: device/realme/RE58C2
+          path: ${{ env.DEVICE_PATH }}
 
-      - name: Install dependencies
+      - name: Swap Space
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 24
+
+      - name: Build Environment
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq \
-            bc bison build-essential ccache curl flex g++-multilib \
-            gcc-multilib git gnupg gperf imagemagick lib32ncurses5-dev \
-            lib32readline-dev lib32z1-dev liblz4-tool libncurses5 \
-            libncurses5-dev libsdl1.2-dev libssl-dev libxml2 \
-            libxml2-utils lzop pngcrush rsync schedtool \
-            squashfs-tools xsltproc zip zlib1g-dev \
-            python3 python3-pip python3-venv libc6-dev-i386 \
-            libgmp-dev libmpc-dev libmpfr-dev repo
-          sudo apt-get install -y -qq openjdk-11-jdk || true
+          git clone https://gitlab.com/OrangeFox/misc/scripts
+          cd scripts
+          sudo bash setup/android_build_env.sh
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: orangefox-${{ github.sha }}
-          max-size: 5G
+          max-size: 10G
 
-      - name: Initialize OrangeFox manifest (fox_12.1)
+      - name: Sync OrangeFox manifest
         run: |
-          repo init --depth=1 \
-            -u https://gitlab.com/OrangeFox/Manifest.git \
-            -b fox_12.1
-          repo sync -j$(nproc --all) --no-tags --no-clone-bundle --force-sync 2>&1
+          mkdir -p ${GITHUB_WORKSPACE}/OrangeFox
+          cd ${GITHUB_WORKSPACE}/OrangeFox
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          git clone https://gitlab.com/OrangeFox/sync.git
+          cd sync
+          ./orangefox_sync.sh --branch ${{ env.FOX_BRANCH }} --path ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}
 
       - name: Apply graphics_drm patch
         run: |
-          cp device/realme/RE58C2/issue_atomic/graphics_drm.cpp \
-             bootable/recovery/minuitwrp/graphics_drm.cpp
+          cp ${GITHUB_WORKSPACE}/${{ env.DEVICE_PATH }}/issue_atomic/graphics_drm.cpp \
+             ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}/bootable/recovery/minuitwrp/graphics_drm.cpp
 
       - name: Build OrangeFox
         run: |
           export CCACHE_DIR=/tmp/ccache
           export USE_CCACHE=1
           export CCACHE_EXEC=/usr/bin/ccache
+          export ALLOW_MISSING_DEPENDENCIES=true
+          cd ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}
           source build/envsetup.sh
-          lunch fox_RE58C2-eng
+          lunch twrp_${{ env.DEVICE_NAME }}-eng
           make -j$(nproc --all) vendorbootimage 2>&1
 
       - name: Upload vendor_boot.img
         uses: actions/upload-artifact@v4
         with:
-          name: orangefox-rmx3760
-          path: out/target/product/RE58C2/vendor_boot.img
+          name: orangefox-${{ env.DEVICE_NAME }}
+          path: ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}/out/target/product/${{ env.DEVICE_NAME }}/vendor_boot.img
           if-no-files-found: error
