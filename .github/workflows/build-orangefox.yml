@@ -14,6 +14,7 @@ env:
   DEVICE_NAME: RE58C2
   DEVICE_PATH: device/realme/RE58C2
   BUILD_TARGET: vendorboot
+  STOCK_VENDOR_BOOT_URL: https://github.com/Gopartner/twrp-rmx3760/releases/download/stock-vendor-boot/vendor_boot_b.bin
 
 jobs:
   build:
@@ -78,6 +79,101 @@ jobs:
           source build/envsetup.sh
           lunch twrp_${{ env.DEVICE_NAME }}-eng
           make -j$(nproc --all) vendorbootimage 2>&1
+
+      - name: Download stock vendor_boot
+        run: |
+          wget -q -O stock_vendor_boot.img "${{ env.STOCK_VENDOR_BOOT_URL }}"
+          ls -la stock_vendor_boot.img
+
+      - name: Check magiskboot
+        run: |
+          which magiskboot 2>/dev/null || echo "magiskboot not found, will use from build"
+          # magiskboot should be in the build output or prebuilt
+          find ${GITHUB_WORKSPACE} -name "magiskboot" -type f 2>/dev/null
+
+      - name: Repack vendor_boot with stock kernel+dtb
+        run: |
+          # Use magiskboot from the host or the recovery build tools
+          # It's typically included in Android builds
+          cd ${GITHUB_WORKSPACE}
+          
+          BUILT_IMAGE="${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}/out/target/product/${{ env.DEVICE_NAME }}/vendor_boot.img"
+          STOCK_IMAGE="${GITHUB_WORKSPACE}/stock_vendor_boot.img"
+          
+          # Find magiskboot - check build prebuilts, SDK tools, etc
+          MAGISKBOOT=$(find ${GITHUB_WORKSPACE} -name "magiskboot" -type f 2>/dev/null | head -1)
+          
+          if [ -z "$MAGISKBOOT" ]; then
+            echo "Downloading magiskboot..."
+            # Download from Magisk GitHub releases
+            wget -q -O magiskboot.zip "https://github.com/topjohnwu/Magisk/releases/download/v28.1/Magisk-v28.1.apk"
+            unzip -o magiskboot.zip "lib/x86_64/libmagiskboot.so" -d magisk_extract 2>/dev/null || true
+            unzip -o magiskboot.zip "lib/x86/libmagiskboot.so" -d magisk_extract 2>/dev/null || true
+            # Try to find and use it
+            if [ -f magisk_extract/lib/x86_64/libmagiskboot.so ]; then
+              mv magisk_extract/lib/x86_64/libmagiskboot.so ./magiskboot
+              chmod +x ./magiskboot
+              MAGISKBOOT="./magiskboot"
+            elif [ -f magisk_extract/lib/x86/libmagiskboot.so ]; then
+              mv magisk_extract/lib/x86/libmagiskboot.so ./magiskboot
+              chmod +x ./magiskboot
+              MAGISKBOOT="./magiskboot"
+            else
+              echo "magiskboot not found in APK, installing via pip..."
+              pip install magiskboot --quiet 2>/dev/null || true
+            fi
+          fi
+          
+          which magiskboot 2>/dev/null || echo "Will use auto-fallback"
+          
+          # Create work directory
+          mkdir -p repack_work/stock repack_work/built
+          
+          # Try to unpack both images
+          # If magiskboot exists, use it; otherwise, use unpack_bootimg or manual dd
+          if command -v magiskboot &>/dev/null; then
+            MAGISKBOOT=$(which magiskboot)
+          fi
+          
+          if [ -n "$MAGISKBOOT" ] && [ -f "$MAGISKBOOT" ]; then
+            echo "Using magiskboot: $MAGISKBOOT"
+            
+            # Unpack stock vendor_boot
+            cp "$STOCK_IMAGE" stock_vendor_boot.img
+            $MAGISKBOOT unpack stock_vendor_boot.img -d repack_work/stock 2>&1 || true
+            
+            # Unpack built OrangeFox vendor_boot
+            cp "$BUILT_IMAGE" built_vendor_boot.img
+            $MAGISKBOOT unpack built_vendor_boot.img -d repack_work/built 2>&1 || true
+            
+            ls -la repack_work/stock/
+            ls -la repack_work/built/
+            
+            # Replace ramdisk: use stock kernel+dtb with OrangeFox ramdisk
+            if [ -f repack_work/built/ramdisk.cpio ]; then
+              echo "Replacing ramdisk with OrangeFox recovery ramdisk..."
+              cp repack_work/built/ramdisk.cpio repack_work/stock/ramdisk.cpio
+              
+              # Repack with stock base + OrangeFox ramdisk
+              cd repack_work/stock
+              $MAGISKBOOT repack ../../stock_vendor_boot.img ../../hybrid_vendor_boot.img 2>&1 || true
+              cd ../..
+              
+              ls -la hybrid_vendor_boot.img
+              
+              if [ -f hybrid_vendor_boot.img ] && [ -s hybrid_vendor_boot.img ]; then
+                echo "Hybrid repack successful!"
+                cp hybrid_vendor_boot.img ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}/out/target/product/${{ env.DEVICE_NAME }}/vendor_boot.img
+              fi
+            else
+              echo "No ramdisk found in OrangeFox build, using built image as-is"
+            fi
+          else
+            echo "magiskboot not available, using built image as-is"
+          fi
+          
+          echo "Final image:"
+          ls -la ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ env.FOX_BRANCH }}/out/target/product/${{ env.DEVICE_NAME }}/vendor_boot.img
 
       - name: Upload vendor_boot.img
         uses: actions/upload-artifact@v4
