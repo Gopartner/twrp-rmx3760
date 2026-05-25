@@ -152,7 +152,7 @@ BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := true
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/recovery/root/system/etc/recovery.fstab
 
 # Temp
-TW_CUSTOM_CPU_TEMP_PATH := sys/devices/virtual/thermal/thermal_zone16/temp
+TW_CUSTOM_CPU_TEMP_PATH := /sys/devices/virtual/thermal/thermal_zone16/temp
 
 
 
