@@ -52,12 +52,7 @@ jobs:
             -b twrp-12.1
           repo sync -c -j$(nproc --all) --no-tags --no-clone-bundle --force-sync 2>&1
 
-      - name: Apply graphics_drm patch
-        run: |
-          cp device/realme/RE58C2/issue_atomic/graphics_drm.cpp \
-             bootable/recovery/minuitwrp/graphics_drm.cpp
-
-      - name: Build TWRP
+      - name: Build TWRP (NO graphics_drm patch - testing stock atomic)
         run: |
           export CCACHE_DIR=/tmp/ccache
           export USE_CCACHE=1
