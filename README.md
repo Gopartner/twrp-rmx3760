@@ -77,7 +77,7 @@ fastboot flash vendor_boot_b stock_vendor_boot.img
 | ADB sideload | Needs testing |
 
 ### Known issues
-- "Atomic commit failed ret=-22" — fixed via custom `graphics_drm.cpp`
+- **Display blank** — DRM atomic commit fails on Unisoc T612. TWRP boots (ADB accessible) but no display output.
 - No userdata decryption
 
 ---
