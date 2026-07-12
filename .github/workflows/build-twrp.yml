@@ -52,6 +52,11 @@ jobs:
             -b twrp-12.1
           repo sync -c -j$(nproc --all) --no-tags --no-clone-bundle --force-sync 2>&1
 
+      - name: Apply OrangeFox graphics_drm (fix atomic commit with universal planes)
+        run: |
+          cp device/realme/RE58C2/issue_atomic/graphics_drm.cpp \
+             bootable/recovery/minuitwrp/graphics_drm.cpp
+
       - name: Build TWRP
         run: |
           export CCACHE_DIR=/tmp/ccache
